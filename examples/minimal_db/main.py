@@ -17,7 +17,8 @@ class Book(db.Model):
     title = db.Column(db.String(100))
 
 
-db.create_all()
+with app.app_context():
+    db.create_all()
 
 
 class BookSchema(ma.SQLAlchemyAutoSchema):
@@ -28,7 +29,7 @@ class BookSchema(ma.SQLAlchemyAutoSchema):
 
 
 class Books(af.Create, af.List):
-    body_schema = BookSchema()
+    body_schema = BookSchema
 
     def get_instances(self):
         return Book.query.all()
