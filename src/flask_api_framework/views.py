@@ -65,10 +65,10 @@ class BaseView(flask.views.View, metaclass=BaseViewType):
             raise ApiError(status_code=400, source="body") from e
 
     def load_kwargs_schema(self):
-        self.loaded_kwargs = self.kwargs_schema.load(data=flask.request.view_args)
+        self.loaded_kwargs = self.kwargs_schema().load(data=flask.request.view_args)
 
     def load_args_schema(self):
-        self.loaded_args = self.args_schema.load(data=flask.request.args)
+        self.loaded_args = self.args_schema().load(data=flask.request.args)
 
     def handle_kwargs(self, schema):
         try:
@@ -111,7 +111,7 @@ class BaseView(flask.views.View, metaclass=BaseViewType):
             data_wrapper = noop_data_wrapper
         if schema is not None:
             return (
-                flask.jsonify(data_wrapper(schema.dump(data, many=many))),
+                flask.jsonify(data_wrapper(schema().dump(data, many=many))),
                 status_code,
             )
         elif schema is None and data is not None:
@@ -195,7 +195,9 @@ class Create(BaseView):
         return self.get_create_response()
 
     def load_create_request_body_schema(self):
-        self.loaded_body = self.create_request_body_schema.load(data=flask.request.json)
+        self.loaded_body = self.create_request_body_schema().load(
+            data=flask.request.json
+        )
 
     def create(self):
         if is_sa_mapped(self.loaded_body):
@@ -249,7 +251,7 @@ class Update(BaseView):
         )
         if self.get_schema_load_instance(self.update_request_body_schema):
             kwargs["instance"] = self.instance
-        self.loaded_body = self.update_request_body_schema.load(**kwargs)
+        self.loaded_body = self.update_request_body_schema().load(**kwargs)
 
     def get_schema_load_instance(self, schema):
         try:
