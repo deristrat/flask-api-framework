@@ -52,6 +52,10 @@ class BaseView(flask.views.View, metaclass=BaseViewType):
     loaded_kwargs = None
     loaded_args = None
 
+    kwargs_instance = None
+    args_instance = None
+    body_instance = None
+
     @property
     def db(self):
         return flask.current_app.extensions["api-framework"].db
@@ -65,10 +69,12 @@ class BaseView(flask.views.View, metaclass=BaseViewType):
             raise ApiError(status_code=400, source="body") from e
 
     def load_kwargs_schema(self):
-        self.loaded_kwargs = self.kwargs_schema().load(data=flask.request.view_args)
+        self.kwargs_instance = self.kwargs_schema()
+        self.loaded_kwargs = self.kwargs_instance.load(data=flask.request.view_args)
 
     def load_args_schema(self):
-        self.loaded_args = self.args_schema().load(data=flask.request.args)
+        self.args_instance = self.args_schema()
+        self.loaded_args = self.args_instance.load(data=flask.request.args)
 
     def handle_kwargs(self, schema):
         try:
@@ -195,9 +201,8 @@ class Create(BaseView):
         return self.get_create_response()
 
     def load_create_request_body_schema(self):
-        self.loaded_body = self.create_request_body_schema().load(
-            data=flask.request.json
-        )
+        self.body_instance = self.create_request_body_schema()
+        self.loaded_body = self.body_instance.load(data=flask.request.json)
 
     def create(self):
         if is_sa_mapped(self.loaded_body):
@@ -251,7 +256,9 @@ class Update(BaseView):
         )
         if self.get_schema_load_instance(self.update_request_body_schema):
             kwargs["instance"] = self.instance
-        self.loaded_body = self.update_request_body_schema().load(**kwargs)
+
+        self.body_instance = self.update_request_body_schema()
+        self.loaded_body = self.body_instance.load(**kwargs)
 
     def get_schema_load_instance(self, schema):
         try:
